@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/s.css">
+  <title>Interpreter</title>
+</head>
+<body>
+  <div class="work_zone">
+    <textarea id="code" rows="20" placeholder="code..">
+num age 10
+str name 'Alex'
+bool write_interpretator false
+
+if 10 == 3
+  // do..
+}
+else
+  // else do..
+}
+
+num i 1
+for 10
+  output i
+  i = i + 1
+}
+    </textarea>
+    <button id="run">Run</button>
+    <button id="clear">Clear</button>
+  </div>
+
+  <div id ="result"></div>
+  
+  <script src="js/tools.js"></script>
+  <script src="js/class.js"></script>
+  <script src="js/code.js"></script>
+</body>
+</html>
