@@ -11,7 +11,6 @@ class Interpreter{
     document.body.style.cursor = 'wait';
     this._code = code.split('\n');
     this.line_reader();
-    c(this._variables);
     document.body.style.cursor = 'default';
   }
   
@@ -22,7 +21,7 @@ class Interpreter{
     if ((first_elem == 'num' || first_elem == 'str' || first_elem == 'bool') && line.length == 3)  return true;
     if (first_elem == 'if' && line.length == 4)  return true;
     if (first_elem == 'for' && line.length == 2)  return true;
-    if (first_elem == 'output' && line.length == 2)  return true;
+    if (first_elem == 'output')  return true;
     if (this.find_variable(first_elem)) return true;
 
     return false;
@@ -31,7 +30,6 @@ class Interpreter{
   line_reader() { // line counter is there "i"
     for (let i = 0; i < this._code.length; ++i) {
       const line = this.tockenizing(this._code[i]);
-
       if (this._skip_mode == true && line[0] != '}') {
         continue;
       }else{
@@ -69,7 +67,6 @@ class Interpreter{
     if (tocken == 'output')         return this.tockens_type[5];
     if (tocken == '}')              return this.tockens_type[6];
 
-    c('tocken: ' + tocken);
     return undefined;
   }
   
@@ -126,6 +123,7 @@ class Interpreter{
     }
 
     if (this._else_skip) {
+      c('else skip worked');
       !this._else_skip;
     }
 
@@ -146,57 +144,115 @@ class Interpreter{
     this._for_instruction = undefined;
   }
 
-  use_var(line) {
-    c('use_var() started', '#789900');
-
-    c(line);
-    let variable = this.find_variable(line[0]);
-    if (variable == false) {
-      return false;
+  get_value_is_tocken(tocken) {
+    let tmp = this.find_variable(tocken);
+    if (tmp != false) {
+      return tmp.var_value;
     }
-    c(variable);
+
+    if (Number.isInteger(+tocken)) {
+      return +tocken;
+    }
+
+    return false;
+  } 
+
+  use_var(line) {
+    let left_operand = this.find_variable(line[0]);
+    if (left_operand == false) {
+      c('is not a variable', 2);
+      return;
+    }
+
     if (line[1] == '=') {
-      if (typeof +line[2] == "number" && typeof +line[4] == "number") {
+      let num_1 = this.get_value_is_tocken(line[2]);
+      let num_2 = this.get_value_is_tocken(line[4]);
+
+      if (num_1 == false || num_2 == false) {
+        c('is not a number', 2);
+        return false;
+      }
+
+      if (typeof +num_1 == "number" && typeof +num_1 == "number") {
         // +, -, *, /
         const sym = line[3];
-        //not working because line[2] or line[4] maybe will be variable.
-        // if (sym == '+') variable.var_value = (+line[2] + line[4]);
-        // if (sym == '-') variable.var_value = (+line[2] - line[4]);
-        // if (sym == '*') variable.var_value = (+line[2] * line[4]);
-        // if (sym == '/') variable.var_value = (+line[2] / line[4]);
-        this.output('arithmetoc operations in developing');
+
+        switch(sym) {
+          case '+': {
+            left_operand.var_value = +num_1 + +num_2;
+            break;
+          }
+          case '-': {
+            left_operand.var_value = +num_1 - +num_2;
+            break;
+          }
+          case '*': {
+            left_operand.var_value = +num_1 * +num_2;
+            break;
+          }
+          case '/': {
+            left_operand.var_value = +num_1 / +num_2;
+            break;
+          }
+        }
+
+      } else {
+        c('typeof two arguments != number', 2);
+        return false;
       }
     }else{
-      c('undefined symbol' ,2);
+      c('undefined symbol', 2);
       return false;
     }
 
-    c('ended use_var()', '#789900');
     return true;
   }
   
   for_worked(line) {
-    this._for_counter = +line[1];
+    if (Number.isInteger(+line[1])) {
+      this._for_counter = +line[1];
+      return;
+    } 
+
+    let tmp = this.find_variable(line[1]);
+    if (tmp != undefined) {
+      this._for_counter = tmp.var_value;
+    } else {
+      c('undefined tocken', 2);
+    }
   }
 
   if_worked(line) {
+    c(line);
     const cmp = line[2]; // >, <, ==
-    let val_left = (this.find_variable(line[1]).var_value || line[1]);
-    let val_right = (this.find_variable(line[3]).var_value || line[3]);
-    c(val_left);
+    let var_left = Number(this.find_variable(line[1]).var_value || line[1]);
+    let var_right = Number(this.find_variable(line[3]).var_value || line[3]);
+    
+    let ret_bool = true;
 
-    if (Number.isInteger(+val_left) != Number.isInteger(+val_right)) { // cmp types
-      this._skip_mode = true;
-    }else{
-      this._else_skip = true;
-      if (Number.isInteger(+val_left) == Number.isInteger(+val_right)) {
-        if (cmp == '==') return (+val_left == +val_right);
-        if (cmp == '>') return (+val_left > +val_right);
-        if (cmp == '<') return (+val_left < +val_right);
+    switch(cmp) {
+      case '==': {
+        ret_bool = (var_left == var_right);  
+        break;
       }
-      
-      return (val_left == val_right);
+      case '>': {
+        ret_bool = (var_left > var_right);  
+        break;
+      }      
+      case '<': {
+        ret_bool = (var_left < var_right);  
+        break;
+      }
     }
+
+    if (ret_bool) {
+      this._else_skip = true;
+    }else {
+      this._skip_mode = true;
+    }
+
+    c(ret_bool);
+    return ret_bool;
   }
 
   if_else() {
@@ -205,8 +261,7 @@ class Interpreter{
     }
   }
 
-  output(text) {
-    const result = ID('result');
+  output(text) { const result = ID('result');
     const output = document.createElement('p');
     const value = this.find_variable(text);
 
@@ -220,22 +275,34 @@ class Interpreter{
   }
 
   tockenizing(line) {
-    line = line.split(' ');
+    let tmp = line.split(' ');
 
-    for(let i = 0; i < line.length;) {
-      if (line[i] == '') {
-        line.splice(i, 1);
+    for(let i = 0; i < tmp.length;) {
+      if (tmp[i] == '') {
+        tmp.splice(i, 1);
         continue;
       }
       
       ++i;
     }
 
-    if (line[0] == '//') {
+    if (tmp[0] == '//') {
       return '';
     }
 
-    return line;
+    if (tmp[0] == 'output' && tmp.length > 2) {
+      let t = [];
+      t.push(tmp[0]);
+      t.push(tmp[1]);
+      
+      for (let i = 2; i < tmp.length; ++i) {
+        t[1] += ' ' + tmp[i];
+      }
+
+      tmp = t;
+    } 
+
+    return tmp;
   }
 
   add_variable(variable, value, type) {

@@ -18,7 +18,6 @@ function c(text, color = 0) {
       console.log('%c' + text, 'background-color: green; padding: 0 4px;');
       break;
     case 2: 
-      console.log('s');
       console.log('%c' + text, 'background-color: red; padding: 0 4px;');
       break;
     case 3: 
